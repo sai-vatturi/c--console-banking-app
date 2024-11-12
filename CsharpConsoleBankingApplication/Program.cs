@@ -47,6 +47,7 @@ namespace CsharpConsoleBankingApplication
                         Console.WriteLine("\nLogin to existing account:");
                         Console.WriteLine("----------------------------");
 
+                        string username = Console.ReadLine();
 
                         break;
                     case "2":
