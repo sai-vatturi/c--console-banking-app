@@ -1,150 +1,346 @@
 ﻿using System;
+using System.Collections.Generic;
+
 namespace CsharpConsoleBankingApplication
 {
-    public class UserNameValidationException : Exception
-    {
-        public UserNameValidationException(string message) :base(message)
-        {
-            Console.WriteLine(message);
-        }
-    }
-
-    public class UserPasswordValidationException : Exception
-    {
-        public UserPasswordValidationException(string message) : base(message)
-        {
-            Console.WriteLine(message);
-        }
-    }
-
+    // The main program class that handles user interactions and application flow.
     public class Program
     {
+        // The entry point of the application. Displays the main menu and handles user input.
         public static void Main(string[] args)
-
         {
-            // create an array to store users
-            List<User> users = new List<User>();
+            // Dictionary to store all registered users with username as the key.
+            Dictionary<string, User> users = new Dictionary<string, User>(StringComparer.OrdinalIgnoreCase);
+            bool isRunning = true; // Flag to control the main loop.
 
-            // use a boolean to handle application running status
-            bool isRunning = true;
+            Console.WriteLine("======================================");
+            Console.WriteLine("Welcome to the C# Console Banking App!");
+            Console.WriteLine("======================================\n");
 
             while (isRunning)
             {
-                Console.WriteLine("Welcome to C# Console Banking!");
-                Console.WriteLine("==============================");
-                Console.WriteLine("1. Login");
-                Console.WriteLine("2. Register");
+                Console.WriteLine("Main Menu:");
+                Console.WriteLine("1. Register");
+                Console.WriteLine("2. Login");
                 Console.WriteLine("3. Exit");
-                Console.Write("Select any value from 1 - 3: ");
+                Console.Write("Select an option: ");
 
-                // Take user input
-                string inp = Console.ReadLine();
+                string choice = Console.ReadLine();
+                Console.WriteLine();
 
-
-                switch (inp)
+                switch (choice)
                 {
                     case "1":
-                        Console.WriteLine("\nLogin to existing account:");
-                        Console.WriteLine("----------------------------");
-
-                        string username = Console.ReadLine();
-
+                        RegisterUser(users);
                         break;
                     case "2":
-                        Console.WriteLine("\nCreate new account:");
-                        Console.WriteLine("-----------------------");
-
-                        // Take input for username
-                        bool UsernameAccepted = false;
-                        string NewUserName = "";
-
-                        while (!UsernameAccepted)
-                        {
-                            Console.Write("Enter username:");
-                            NewUserName = Console.ReadLine();
-                            try
-                            {
-                                ValidateUsername(NewUserName);
-                                UsernameAccepted = true;
-
-                            }
-                            catch (UserNameValidationException uve)
-                            {
-                                Console.WriteLine("Invalid username: " + uve.Message);
-                            }
-                        }
-
-                        // Take input for password
-                        bool PasswordAccepted = false;
-                        string NewPassword = "";
-
-                        while (!PasswordAccepted)
-                        {
-                            Console.Write("Enter password:");
-                            NewPassword = Console.ReadLine();
-                            try
-                            {
-                                ValidateUsername(NewPassword);
-                                PasswordAccepted = true;
-
-                            }
-                            catch (UserPasswordValidationException upve)
-                            {
-                                Console.WriteLine("Invalid password: " + upve.Message);
-                            }
-                        }
-
-                        users.Add(new User(NewUserName, NewPassword));
-                        Console.WriteLine("User successfully created! \n");
+                        LoginUser(users);
                         break;
-
                     case "3":
                         isRunning = false;
-                        Console.WriteLine("\nExiting....");
+                        Console.WriteLine("Thank you for using the Banking App. Goodbye!");
                         break;
                     default:
-                        Console.Write("Invalid Value. Select any value from 1 - 3: ");
+                        Console.WriteLine("Invalid option. Please try again.\n");
                         break;
                 }
-
             }
         }
 
-        public static void ValidateUsername(string username)
+        // Handles the registration process by collecting username and password.
+        private static void RegisterUser(Dictionary<string, User> users)
         {
-            if (string.IsNullOrWhiteSpace(username))
+            try
             {
-                throw new UserNameValidationException("Username cannot be empty!");
+                Console.Write("Enter a username (5-15 characters): ");
+                string username = Console.ReadLine();
+
+                Console.Write("Enter a password (8-20 characters): ");
+                string password = Console.ReadLine();
+
+                // Check if the username already exists (case-insensitive).
+                if (users.ContainsKey(username))
+                {
+                    Console.WriteLine("Username already exists. Please choose a different username.\n");
+                    return;
+                }
+
+                // Create a new user and add to the users dictionary.
+                User newUser = new User(username, password);
+                users.Add(username, newUser);
+                Console.WriteLine("Registration successful!\n");
             }
-            if (username.Length < 5)
+            catch (ArgumentException ex)
             {
-                throw new UserNameValidationException("Username must be 6 characters or more!");
+                // Display validation errors.
+                Console.WriteLine($"Registration failed: {ex.Message}\n");
             }
-            if (username.Length > 15)
+            catch (Exception ex)
             {
-                throw new UserNameValidationException("Username must be less than 15 charaters!");
-            }
-            if (!Char.IsLetter(username[0]))
-            {
-                throw new UserNameValidationException("Username must start with a letter!");
+                // Handle any unexpected errors.
+                Console.WriteLine($"An unexpected error occurred: {ex.Message}\n");
             }
         }
 
-        public static void ValidatePassword(string password)
+        // Handles the login process by verifying username and password.
+        private static void LoginUser(Dictionary<string, User> users)
         {
-            if (string.IsNullOrWhiteSpace(password))
+            Console.Write("Enter your username: ");
+            string username = Console.ReadLine();
+            Console.Write("Enter your password: ");
+            string password = Console.ReadLine();
+
+            // Check if the user exists and the password is correct.
+            if (users.TryGetValue(username, out User user) && user.CheckPassword(password))
             {
-                throw new UserPasswordValidationException("Password cannot be empty!");
+                Console.WriteLine("\nLogin successful!\n");
+                UserMenu(user);
             }
-            if (password.Length < 8)
+            else
             {
-                throw new UserPasswordValidationException("Password must be 8 characters or more!");
+                Console.WriteLine("\nInvalid username or password.\n");
             }
-            if (password.Length > 20)
+        }
+
+        // Displays the user-specific menu after successful login and handles user actions.
+        private static void UserMenu(User user)
+        {
+            bool userLoggedIn = true; // Flag to control the user menu loop.
+
+            while (userLoggedIn)
             {
-                throw new UserPasswordValidationException("Password must be less than 20 characters");
+                Console.WriteLine("User Menu:");
+                Console.WriteLine("1. Open Account");
+                Console.WriteLine("2. View Accounts");
+                Console.WriteLine("3. Deposit");
+                Console.WriteLine("4. Withdraw");
+                Console.WriteLine("5. Check Balance");
+                Console.WriteLine("6. View Statement");
+                Console.WriteLine("7. Apply Monthly Interest");
+                Console.WriteLine("8. Logout");
+                Console.Write("Choose an option: ");
+
+                string choice = Console.ReadLine();
+                Console.WriteLine();
+
+                try
+                {
+                    switch (choice)
+                    {
+                        case "1":
+                            OpenAccount(user);
+                            break;
+                        case "2":
+                            user.DisplayAccounts();
+                            break;
+                        case "3":
+                            PerformDeposit(user);
+                            break;
+                        case "4":
+                            PerformWithdrawal(user);
+                            break;
+                        case "5":
+                            CheckBalance(user);
+                            break;
+                        case "6":
+                            ViewStatement(user);
+                            break;
+                        case "7":
+                            ApplyInterest(user);
+                            break;
+                        case "8":
+                            userLoggedIn = false;
+                            Console.WriteLine("Logged out successfully.\n");
+                            break;
+                        default:
+                            Console.WriteLine("Invalid option. Please try again.\n");
+                            break;
+                    }
+                }
+                catch (FormatException)
+                {
+                    // Handle cases where input is not in the expected format.
+                    Console.WriteLine("Invalid input format. Please enter the correct data type.\n");
+                }
+                catch (Exception ex)
+                {
+                    // Handle any unexpected errors.
+                    Console.WriteLine($"An error occurred: {ex.Message}\n");
+                }
+            }
+        }
+
+        // Handles the process of opening a new bank account for the user.
+        private static void OpenAccount(User user)
+        {
+            try
+            {
+                Console.Write("Enter account holder name: ");
+                string accountHolder = Console.ReadLine();
+
+                string accountType;
+                while (true)
+                {
+                    Console.Write("Enter account type (savings/checking): ");
+                    accountType = Console.ReadLine().ToLower();
+                    if (accountType == "savings" || accountType == "checking")
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid account type. Please enter 'savings' or 'checking'.");
+                    }
+                }
+
+                decimal initialDeposit;
+                while (true)
+                {
+                    Console.Write("Enter initial deposit amount: ");
+                    string depositInput = Console.ReadLine();
+                    if (decimal.TryParse(depositInput, out initialDeposit) && initialDeposit >= 0)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid amount. Please enter a positive number.");
+                    }
+                }
+
+                // Create the new account.
+                user.CreateAccount(accountHolder, accountType, initialDeposit);
+                Console.WriteLine();
+            }
+            catch (ArgumentException ex)
+            {
+                // Display validation errors.
+                Console.WriteLine($"Account creation failed: {ex.Message}\n");
+            }
+            catch (Exception ex)
+            {
+                // Handle any unexpected errors.
+                Console.WriteLine($"An unexpected error occurred: {ex.Message}\n");
+            }
+        }
+
+        // Handles deposit transactions by collecting account number and deposit amount.
+        private static void PerformDeposit(User user)
+        {
+            Console.Write("Enter account number: ");
+            string accountNumber = Console.ReadLine();
+            Account account = user.GetAccount(accountNumber);
+
+            if (account != null)
+            {
+                decimal amount;
+                while (true)
+                {
+                    Console.Write("Enter deposit amount: ");
+                    string amountInput = Console.ReadLine();
+                    if (decimal.TryParse(amountInput, out amount) && amount > 0)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid amount. Please enter a positive number.");
+                    }
+                }
+
+                account.Deposit(amount);
+                Console.WriteLine();
+            }
+            else
+            {
+                Console.WriteLine("Account not found.\n");
+            }
+        }
+
+        // Handles withdrawal transactions by collecting account number and withdrawal amount.
+        private static void PerformWithdrawal(User user)
+        {
+            Console.Write("Enter account number: ");
+            string accountNumber = Console.ReadLine();
+            Account account = user.GetAccount(accountNumber);
+
+            if (account != null)
+            {
+                decimal amount;
+                while (true)
+                {
+                    Console.Write("Enter withdrawal amount: ");
+                    string amountInput = Console.ReadLine();
+                    if (decimal.TryParse(amountInput, out amount) && amount > 0)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid amount. Please enter a positive number.");
+                    }
+                }
+
+                account.Withdraw(amount);
+                Console.WriteLine();
+            }
+            else
+            {
+                Console.WriteLine("Account not found.\n");
+            }
+        }
+
+        // Handles balance checking by collecting the account number and displaying the balance.
+        private static void CheckBalance(User user)
+        {
+            Console.Write("Enter account number: ");
+            string accountNumber = Console.ReadLine();
+            Account account = user.GetAccount(accountNumber);
+
+            if (account != null)
+            {
+                account.DisplayBalance();
+                Console.WriteLine();
+            }
+            else
+            {
+                Console.WriteLine("Account not found.\n");
+            }
+        }
+
+        // Handles viewing the account statement by collecting the account number.
+        private static void ViewStatement(User user)
+        {
+            Console.Write("Enter account number: ");
+            string accountNumber = Console.ReadLine();
+            Account account = user.GetAccount(accountNumber);
+
+            if (account != null)
+            {
+                account.DisplayStatement();
+            }
+            else
+            {
+                Console.WriteLine("Account not found.\n");
+            }
+        }
+
+        // Handles applying monthly interest to the specified account.
+        private static void ApplyInterest(User user)
+        {
+            Console.Write("Enter account number: ");
+            string accountNumber = Console.ReadLine();
+            Account account = user.GetAccount(accountNumber);
+
+            if (account != null)
+            {
+                account.ApplyMonthlyInterest();
+                Console.WriteLine();
+            }
+            else
+            {
+                Console.WriteLine("Account not found.\n");
             }
         }
     }
 }
-
